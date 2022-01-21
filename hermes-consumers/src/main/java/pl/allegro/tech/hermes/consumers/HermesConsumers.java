@@ -1,9 +1,10 @@
 package pl.allegro.tech.hermes.consumers;
 
-import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.hk2.api.ServiceLocator;//only class other than config that could be aware of Spring itself
 import org.glassfish.hk2.utilities.Binder;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.jvnet.hk2.component.MultiMap;
+import org.jvnet.hk2.spring.bridge.api.SpringBridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.allegro.tech.hermes.common.hook.FlushLogsShutdownHook;
@@ -46,10 +47,11 @@ public class HermesConsumers {
 
     public static void main(String... args) {
         consumers().build().start();
+//        SpringApplication.run(HermesConsumers.class, args);
     }
 
     HermesConsumers(HooksHandler hooksHandler,
-                    List<Binder> binders,
+                    List<Binder> binders,//inject all classes that implement Binder
                     MultiMap<String, Function<ServiceLocator, ProtocolMessageSenderProvider>> messageSenderProvidersSuppliers,
                     List<Function<ServiceLocator, LogRepository>> logRepositories, boolean flushLogsShutdownHookEnabled) {
 
@@ -57,8 +59,10 @@ public class HermesConsumers {
         this.messageSenderProvidersSuppliers = messageSenderProvidersSuppliers;
         this.logRepositories = logRepositories;
 
-        serviceLocator = createDIContainer(binders);
+        serviceLocator = createDIContainer(binders);//inject all config binders' classes into IoC container
+//        SpringBridge.getSpringBridge().initializeSpringBridge(serviceLocator);
 
+        //get all "beans" from IoC container
         trackers = serviceLocator.getService(Trackers.class);
         consumerHttpServer = serviceLocator.getService(ConsumerHttpServer.class);
         messageSenderFactory = serviceLocator.getService(MessageSenderFactory.class);

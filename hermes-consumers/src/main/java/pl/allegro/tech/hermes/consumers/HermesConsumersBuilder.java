@@ -1,10 +1,10 @@
 package pl.allegro.tech.hermes.consumers;
 
 import com.google.common.collect.Lists;
-import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.hk2.utilities.Binder;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
-import org.jvnet.hk2.component.MultiMap;
+import org.glassfish.hk2.api.ServiceLocator;//TODO: remove
+import org.glassfish.hk2.utilities.Binder;//TODO: remove
+import org.glassfish.hk2.utilities.binding.AbstractBinder;//TODO: remove
+import org.jvnet.hk2.component.MultiMap;//TODO: remove
 import pl.allegro.tech.hermes.common.di.CommonBinder;
 import pl.allegro.tech.hermes.common.hook.Hook;
 import pl.allegro.tech.hermes.common.hook.HooksHandler;
@@ -33,8 +33,9 @@ public final class HermesConsumersBuilder {
     private static final int RANK_HIGHER_THAN_DEFAULT = 10;
 
     private final HooksHandler hooksHandler = new HooksHandler();
+    //TODO: remove MultiMap...
     private final MultiMap<String, Function<ServiceLocator, ProtocolMessageSenderProvider>> messageSenderProviders = new MultiMap<>();
-    private final List<Function<ServiceLocator, LogRepository>> logRepositories = new ArrayList<>();
+    private final List<Function<ServiceLocator, LogRepository>> logRepositories = new ArrayList<>();//TODO
     private final List<SubscriptionMessageFilterCompiler> filters = new ArrayList<>();
     private final List<MessageFilter> globalFilters = new ArrayList<>();
 
@@ -105,7 +106,7 @@ public final class HermesConsumersBuilder {
         return withBinding(messageContentReaderFactory, MessageContentReaderFactory.class);
     }
 
-    public <T> HermesConsumersBuilder withBinding(T instance, Class<T> clazz) {
+    public <T> HermesConsumersBuilder withBinding(T instance, Class<T> clazz) { //TODO: check where it is used and why and what for
         return withBinding(instance, clazz, clazz.getName());
     }
 
@@ -113,7 +114,7 @@ public final class HermesConsumersBuilder {
         binders.add(new AbstractBinder() {
             @Override
             protected void configure() {
-                bind(instance).to(clazz).named(name).ranked(RANK_HIGHER_THAN_DEFAULT);
+                bind(instance).to(clazz).named(name).ranked(RANK_HIGHER_THAN_DEFAULT);//TODO resolve rank
             }
         });
         return this;
@@ -124,7 +125,7 @@ public final class HermesConsumersBuilder {
         binders.add(new TrackersBinder(new ArrayList<>()));
 
         messageSenderProviders.add(
-                "http", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultHttpMessageSenderProvider")
+                "http", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultHttpMessageSenderProvider")//dla
         );
         messageSenderProviders.add(
                 "https", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultHttpMessageSenderProvider")
