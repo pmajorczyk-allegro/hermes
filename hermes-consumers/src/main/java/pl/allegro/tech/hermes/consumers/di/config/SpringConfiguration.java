@@ -10,9 +10,11 @@ import org.eclipse.jetty.client.api.Request;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.context.support.GenericApplicationContext;
 import pl.allegro.tech.hermes.common.admin.zookeeper.ZookeeperAdminCache;
 import pl.allegro.tech.hermes.common.clock.ClockFactory;
 import pl.allegro.tech.hermes.common.config.ConfigFactory;
@@ -121,7 +123,6 @@ import pl.allegro.tech.hermes.consumers.consumer.sender.resolver.InterpolatingEn
 import pl.allegro.tech.hermes.consumers.consumer.sender.timeout.FutureAsyncTimeout;
 import pl.allegro.tech.hermes.consumers.consumer.sender.timeout.FutureAsyncTimeoutFactory;
 import pl.allegro.tech.hermes.consumers.consumer.trace.MetadataAppender;
-import pl.allegro.tech.hermes.consumers.di.TrackersBinder;
 import pl.allegro.tech.hermes.consumers.health.ConsumerHttpServer;
 import pl.allegro.tech.hermes.consumers.health.ConsumerMonitor;
 import pl.allegro.tech.hermes.consumers.message.undelivered.UndeliveredMessageLogPersister;
@@ -187,6 +188,11 @@ import static pl.allegro.tech.hermes.common.config.Configs.SCHEMA_REPOSITORY_HTT
 //TODO: ogarnac metody dispose
 //TODO: split - commons, consumers etc.
 public class SpringConfiguration {
+
+    @Bean
+    public ApplicationContext applicationContext() {
+        return new GenericApplicationContext();
+    }
 
     @Bean
     public ConsumerAuthorizationHandler oAuthConsumerAuthorizationHandler(OAuthSubscriptionHandlerFactory handlerFactory,
@@ -872,7 +878,7 @@ public class SpringConfiguration {
     }
 
     @Bean
-    public KafkaNamesMapper kafkaNamesMapperFactory(ConfigFactory configFactory) {
+    public KafkaNamesMapper kafkaNamesMapper(ConfigFactory configFactory) {
         return new KafkaNamesMapperFactory(configFactory).provide();
     }
 
@@ -960,4 +966,11 @@ public class SpringConfiguration {
         return new SubscriptionOffsetChangeIndicatorFactory(zookeeper, paths, subscriptionRepository).provide();
     }
 
+
+//---------------------------------------------
+
+//    @Bean
+//    public {
+//        return new IntegrationTestKafkaNamesMapperFactory(configFactory.getStringProperty(Configs.KAFKA_NAMESPACE)).create()
+//    }
 }

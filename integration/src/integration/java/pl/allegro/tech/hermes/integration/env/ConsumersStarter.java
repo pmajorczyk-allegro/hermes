@@ -25,7 +25,7 @@ import static pl.allegro.tech.hermes.common.config.Configs.SCHEMA_CACHE_ENABLED;
 import static pl.allegro.tech.hermes.common.config.Configs.CONSUMER_SSL_KEYSTORE_SOURCE;
 import static pl.allegro.tech.hermes.common.config.Configs.CONSUMER_SSL_TRUSTSTORE_SOURCE;
 
-public class ConsumersStarter implements Starter<HermesConsumers> {
+public class ConsumersStarter implements Starter<HermesConsumers> {//TODO?
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumersStarter.class);
 
@@ -47,21 +47,33 @@ public class ConsumersStarter implements Starter<HermesConsumers> {
         configFactory.overrideProperty(CONSUMER_SSL_KEYSTORE_SOURCE, "provided");
         configFactory.overrideProperty(CONSUMER_SSL_TRUSTSTORE_SOURCE, "provided");
 
-        consumers = HermesConsumers.consumers()
-            .withKafkaTopicsNamesMapper(
-                    new IntegrationTestKafkaNamesMapperFactory(configFactory.getStringProperty(Configs.KAFKA_NAMESPACE)).create())
-            .withBinding(configFactory, ConfigFactory.class)
-            .withBinding(new MultiUrlEndpointAddressResolver(), EndpointAddressResolver.class)
-            .withLogRepository(serviceLocator -> new MongoLogRepository(FongoFactory.hermesDB(),
-                    10,
-                    1000,
-                    configFactory.getStringProperty(Configs.KAFKA_CLUSTER_NAME),
-                    configFactory.getStringProperty(Configs.HOSTNAME),
-                    serviceLocator.getService(MetricRegistry.class),
-                    serviceLocator.getService(PathsCompiler.class)))
-            .withDisabledGlobalShutdownHook()
-            .withDisabledFlushLogsShutdownHook()
-            .build();
+        consumers = HermesConsumers.consumers(null)//TODO: ogarnąć
+                .withKafkaTopicsNamesMapper(
+                        new IntegrationTestKafkaNamesMapperFactory(configFactory.getStringProperty(Configs.KAFKA_NAMESPACE)).create())
+//                .withSpringKafkaTopicsNamesMapper(
+//                        () -> new IntegrationTestKafkaNamesMapperFactory(configFactory.getStringProperty(Configs.KAFKA_NAMESPACE)).create()
+//                )
+                .withBinding(configFactory, ConfigFactory.class)
+//                .withSpringBinding(() -> configFactory, ConfigFactory.class)
+                .withBinding(new MultiUrlEndpointAddressResolver(), EndpointAddressResolver.class)
+//                .withSpringBinding(MultiUrlEndpointAddressResolver::new, EndpointAddressResolver.class)
+                .withLogRepository(serviceLocator -> new MongoLogRepository(FongoFactory.hermesDB(),
+                        10,
+                        1000,
+                        configFactory.getStringProperty(Configs.KAFKA_CLUSTER_NAME),
+                        configFactory.getStringProperty(Configs.HOSTNAME),
+                        serviceLocator.getService(MetricRegistry.class),
+                        serviceLocator.getService(PathsCompiler.class)))
+//                .withSpringLogRepository(applicationContext -> new MongoLogRepository(FongoFactory.hermesDB(),
+//                        10,
+//                        1000,
+//                        configFactory.getStringProperty(Configs.KAFKA_CLUSTER_NAME),
+//                        configFactory.getStringProperty(Configs.HOSTNAME),
+//                        applicationContext.getBean(MetricRegistry.class),
+//                        applicationContext.getBean(PathsCompiler.class)))
+                .withDisabledGlobalShutdownHook()
+                .withDisabledFlushLogsShutdownHook()
+                .build();
 
         consumers.start();
     }
