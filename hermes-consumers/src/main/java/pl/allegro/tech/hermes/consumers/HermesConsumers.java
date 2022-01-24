@@ -3,14 +3,10 @@ package pl.allegro.tech.hermes.consumers;
 import org.glassfish.hk2.api.ServiceLocator;//only class other than config that could be aware of Spring itself
 import org.glassfish.hk2.utilities.Binder;
 import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
-import org.jvnet.hk2.component.MultiMap;
-import org.jvnet.hk2.spring.bridge.api.SpringBridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
-import pl.allegro.tech.hermes.common.hook.FlushLogsShutdownHook;
-import pl.allegro.tech.hermes.common.hook.HooksHandler;
 import pl.allegro.tech.hermes.consumers.consumer.oauth.client.OAuthClient;
 import pl.allegro.tech.hermes.consumers.consumer.rate.maxrate.MaxRateSupervisor;
 import pl.allegro.tech.hermes.consumers.consumer.sender.MessageSenderFactory;
@@ -36,18 +32,12 @@ public class HermesConsumers {//TODO: change to bean?
 
     private static final Logger logger = LoggerFactory.getLogger(HermesConsumers.class);
 
-    private final HooksHandler hooksHandler;
     private final SpringHooksHandler springHooksHandler;
     private final ConsumerHttpServer consumerHttpServer;
-//    private final Trackers trackers;
-    private final Trackers trackers2;
-    private final List<Function<ServiceLocator, LogRepository>> logRepositories;
+    private final Trackers trackers;
     private final List<Function<ApplicationContext, LogRepository>> springLogRepositories;
-    private final MultiMap<String, Function<ServiceLocator, ProtocolMessageSenderProvider>> messageSenderProvidersSuppliers;
     private final Map<String, LinkedList<Function<ApplicationContext, ProtocolMessageSenderProvider>>> springMessageSenderProvidersSuppliers;
-//    private final MessageSenderFactory messageSenderFactory;
     private final MessageSenderFactory messageSenderFactory2;
-//    private final ServiceLocator serviceLocator;
 
     private final ConsumerNodesRegistry consumerNodesRegistry;
     private final SupervisorController supervisorController;
@@ -63,20 +53,17 @@ public class HermesConsumers {//TODO: change to bean?
         consumers(applicationContext).build().start();
     }
 
-    HermesConsumers(HooksHandler hooksHandler,
-                    SpringHooksHandler springHooksHandler,
+    HermesConsumers(SpringHooksHandler springHooksHandler,
+//            HooksHandler hooksHandler,
                     List<Binder> binders,
-                    MultiMap<String, Function<ServiceLocator, ProtocolMessageSenderProvider>> messageSenderProvidersSuppliers,
+//                    MultiMap<String, Function<ServiceLocator, ProtocolMessageSenderProvider>> messageSenderProvidersSuppliers,
                     Map<String, LinkedList<Function<ApplicationContext, ProtocolMessageSenderProvider>>> springMessageSenderProvidersSuppliers,
-                    List<Function<ServiceLocator, LogRepository>> logRepositories,
+//                    List<Function<ServiceLocator, LogRepository>> logRepositories,
                     List<Function<ApplicationContext, LogRepository>> springLogRepositories,
                     boolean flushLogsShutdownHookEnabled) {
 
-        this.hooksHandler = hooksHandler;
         this.springHooksHandler = springHooksHandler;
-        this.messageSenderProvidersSuppliers = messageSenderProvidersSuppliers;
         this.springMessageSenderProvidersSuppliers = springMessageSenderProvidersSuppliers;
-        this.logRepositories = logRepositories;
         this.springLogRepositories = springLogRepositories;
 
 //        serviceLocator = createDIContainer(binders);//inject all config binders' classes into IoC container
@@ -84,7 +71,7 @@ public class HermesConsumers {//TODO: change to bean?
 
         //get all "beans" from IoC container
 //        trackers = serviceLocator.getService(Trackers.class);
-        trackers2 = applicationContext.getBean(Trackers.class);
+        trackers = applicationContext.getBean(Trackers.class);
 //        consumerHttpServer = serviceLocator.getService(ConsumerHttpServer.class);
         consumerHttpServer = applicationContext.getBean(ConsumerHttpServer.class);
 //        messageSenderFactory = serviceLocator.getService(MessageSenderFactory.class);
@@ -145,7 +132,7 @@ public class HermesConsumers {//TODO: change to bean?
 //                    trackers.add(serviceLocatorLogRepositoryFunction.apply(serviceLocator)));
 
             springLogRepositories.forEach(applicationContextLogRepositoryFunction ->
-                    trackers2.add(applicationContextLogRepositoryFunction.apply(applicationContext)));
+                    trackers.add(applicationContextLogRepositoryFunction.apply(applicationContext)));
 
 //            messageSenderProvidersSuppliers.entrySet().stream().forEach(entry ->
 //                    entry.getValue().stream().forEach(supplier ->
@@ -172,14 +159,14 @@ public class HermesConsumers {//TODO: change to bean?
     }
 
     public void stop() {
-//        hooksHandler.shutdown(serviceLocator);//TODO
+//        hooksHandler.shutdown(serviceLocator);
         springHooksHandler.shutdown(applicationContext);//TODO
     }
 
-    private ServiceLocator createDIContainer(List<Binder> binders) {
-        String uniqueName = "HermesConsumersLocator" + UUID.randomUUID();
-        return ServiceLocatorUtilities.bind(uniqueName, binders.toArray(new Binder[binders.size()]));
-    }
+//    private ServiceLocator createDIContainer(List<Binder> binders) {
+//        String uniqueName = "HermesConsumersLocator" + UUID.randomUUID();
+//        return ServiceLocatorUtilities.bind(uniqueName, binders.toArray(new Binder[binders.size()]));
+//    }
 
 //    public <T> T getService(Class<T> clazz) {
 //        return serviceLocator.getService(clazz);

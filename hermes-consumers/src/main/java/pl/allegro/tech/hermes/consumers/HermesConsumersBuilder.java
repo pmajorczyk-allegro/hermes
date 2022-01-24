@@ -174,7 +174,7 @@ public final class HermesConsumersBuilder {//TODO: use java config + qualifiers 
         binders.add(new AbstractBinder() {
             @Override
             protected void configure() {
-                bind(instance).to(clazz).named(name).ranked(RANK_HIGHER_THAN_DEFAULT);//TODO resolve rank
+                bind(instance).to(clazz).named(name).ranked(RANK_HIGHER_THAN_DEFAULT);
             }
         });
         return this;
@@ -187,21 +187,21 @@ public final class HermesConsumersBuilder {//TODO: use java config + qualifiers 
     }
 
     public HermesConsumers build() {
-        withBinding(buildFilters(), MessageFilterSource.class);
+//        withBinding(buildFilters(), MessageFilterSource.class);
         withSpringBinding(this::buildFilters, MessageFilters.class);
 //        withSpringBinding(() -> new Trackers(new ArrayList<>()), Trackers.class);
 
-        binders.add(new TrackersBinder(new ArrayList<>()));
+//        binders.add(new TrackersBinder(new ArrayList<>()));
 
-        messageSenderProviders.add(
-                "http", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultHttpMessageSenderProvider")//dla
-        );
-        messageSenderProviders.add(
-                "https", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultHttpMessageSenderProvider")
-        );
-        messageSenderProviders.add(
-                "jms", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultJmsMessageSenderProvider")
-        );
+//        messageSenderProviders.add(
+//                "http", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultHttpMessageSenderProvider")
+//        );
+//        messageSenderProviders.add(
+//                "https", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultHttpMessageSenderProvider")
+//        );
+//        messageSenderProviders.add(
+//                "jms", locator -> locator.getService(ProtocolMessageSenderProvider.class, "defaultJmsMessageSenderProvider")
+//        );
 
         LinkedList<Function<ApplicationContext, ProtocolMessageSenderProvider>> httpProviderList = new LinkedList<>();
         httpProviderList.add(applicationContext1 -> applicationContext1.getBean("defaultHttpMessageSenderProvider", ProtocolMessageSenderProvider.class));
@@ -216,8 +216,7 @@ public final class HermesConsumersBuilder {//TODO: use java config + qualifiers 
         addSpringMessageSenderProvider("https", httpsProviderList);
         addSpringMessageSenderProvider("jms", jmsProviderList);
 
-        return new HermesConsumers(hooksHandler, springHooksHandler, binders, messageSenderProviders, springMessageSenderProviders,
-                logRepositories, springLogRepositories, flushLogsShutdownHookEnabled);
+        return new HermesConsumers(springHooksHandler, binders, springMessageSenderProviders, springLogRepositories, flushLogsShutdownHookEnabled);
     }
 
     private MessageFilters buildFilters() {
