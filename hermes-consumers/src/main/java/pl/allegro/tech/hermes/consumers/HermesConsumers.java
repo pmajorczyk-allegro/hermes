@@ -39,15 +39,15 @@ public class HermesConsumers {//TODO: change to bean?
     private final HooksHandler hooksHandler;
     private final SpringHooksHandler springHooksHandler;
     private final ConsumerHttpServer consumerHttpServer;
-    private final Trackers trackers;
+//    private final Trackers trackers;
     private final Trackers trackers2;
     private final List<Function<ServiceLocator, LogRepository>> logRepositories;
     private final List<Function<ApplicationContext, LogRepository>> springLogRepositories;
     private final MultiMap<String, Function<ServiceLocator, ProtocolMessageSenderProvider>> messageSenderProvidersSuppliers;
     private final Map<String, LinkedList<Function<ApplicationContext, ProtocolMessageSenderProvider>>> springMessageSenderProvidersSuppliers;
-    private final MessageSenderFactory messageSenderFactory;
+//    private final MessageSenderFactory messageSenderFactory;
     private final MessageSenderFactory messageSenderFactory2;
-    private final ServiceLocator serviceLocator;
+//    private final ServiceLocator serviceLocator;
 
     private final ConsumerNodesRegistry consumerNodesRegistry;
     private final SupervisorController supervisorController;
@@ -79,48 +79,31 @@ public class HermesConsumers {//TODO: change to bean?
         this.logRepositories = logRepositories;
         this.springLogRepositories = springLogRepositories;
 
-        serviceLocator = createDIContainer(binders);//inject all config binders' classes into IoC container
+//        serviceLocator = createDIContainer(binders);//inject all config binders' classes into IoC container
 //        SpringBridge.getSpringBridge().initializeSpringBridge(serviceLocator);
 
         //get all "beans" from IoC container
-        trackers = serviceLocator.getService(Trackers.class);
+//        trackers = serviceLocator.getService(Trackers.class);
         trackers2 = applicationContext.getBean(Trackers.class);
 //        consumerHttpServer = serviceLocator.getService(ConsumerHttpServer.class);
         consumerHttpServer = applicationContext.getBean(ConsumerHttpServer.class);
-        messageSenderFactory = serviceLocator.getService(MessageSenderFactory.class);
+//        messageSenderFactory = serviceLocator.getService(MessageSenderFactory.class);
         messageSenderFactory2 = applicationContext.getBean(MessageSenderFactory.class);
 
-        consumerNodesRegistry = serviceLocator.getService(ConsumerNodesRegistry.class);
-//        consumerNodesRegistry = applicationContext.getBean(ConsumerNodesRegistry.class);
-        supervisorController = serviceLocator.getService(SupervisorController.class);
-//        supervisorController = applicationContext.getBean(SupervisorController.class);
-        maxRateSupervisor = serviceLocator.getService(MaxRateSupervisor.class);
-//        maxRateSupervisor = applicationContext.getBean(MaxRateSupervisor.class);
-        assignmentCache = serviceLocator.getService(ConsumerAssignmentCache.class);
-//        assignmentCache = applicationContext.getBean(ConsumerAssignmentCache.class);
-        oAuthHttpClient = serviceLocator.getService(OAuthClient.class);
-//        oAuthHttpClient = applicationContext.getBean(OAuthClient.class);
-        httpClientsWorkloadReporter = serviceLocator.getService(HttpClientsWorkloadReporter.class);
-//        httpClientsWorkloadReporter = applicationContext.getBean(HttpClientsWorkloadReporter.class);
+//        consumerNodesRegistry = serviceLocator.getService(ConsumerNodesRegistry.class);
+        consumerNodesRegistry = applicationContext.getBean(ConsumerNodesRegistry.class);
+//        supervisorController = serviceLocator.getService(SupervisorController.class);
+        supervisorController = applicationContext.getBean(SupervisorController.class);
+//        maxRateSupervisor = serviceLocator.getService(MaxRateSupervisor.class);
+        maxRateSupervisor = applicationContext.getBean(MaxRateSupervisor.class);
+//        assignmentCache = serviceLocator.getService(ConsumerAssignmentCache.class);
+        assignmentCache = applicationContext.getBean("consumerAssignmentCache", ConsumerAssignmentCache.class);
+//        oAuthHttpClient = serviceLocator.getService(OAuthClient.class);
+        oAuthHttpClient = applicationContext.getBean(OAuthClient.class);
+//        httpClientsWorkloadReporter = serviceLocator.getService(HttpClientsWorkloadReporter.class);
+        httpClientsWorkloadReporter = applicationContext.getBean(HttpClientsWorkloadReporter.class);
 
-        hooksHandler.addShutdownHook((s) -> { //TODO: czy w ogóle potrzebujemy tych hookow dla Springa?
-            try {
-                consumerHttpServer.stop();
-                maxRateSupervisor.stop();
-                assignmentCache.stop();
-                oAuthHttpClient.stop();
-                consumerNodesRegistry.stop();
-                supervisorController.shutdown();
-                s.shutdown();
-            } catch (Exception e) {
-                logger.error("Exception while shutdown Hermes Consumers", e);
-            }
-        });
-        if (flushLogsShutdownHookEnabled) {
-            hooksHandler.addShutdownHook(new FlushLogsShutdownHook());
-        }
-//
-//        springHooksHandler.addShutdownHook((s) -> {
+//        hooksHandler.addShutdownHook((s) -> { //TODO: czy w ogóle potrzebujemy tych hookow dla Springa?
 //            try {
 //                consumerHttpServer.stop();
 //                maxRateSupervisor.stop();
@@ -128,28 +111,46 @@ public class HermesConsumers {//TODO: change to bean?
 //                oAuthHttpClient.stop();
 //                consumerNodesRegistry.stop();
 //                supervisorController.shutdown();
+//                s.shutdown();
 //            } catch (Exception e) {
 //                logger.error("Exception while shutdown Hermes Consumers", e);
 //            }
 //        });
 //        if (flushLogsShutdownHookEnabled) {
-//            springHooksHandler.addShutdownHook(new SpringFlushLogsShutdownHook());
+//            hooksHandler.addShutdownHook(new FlushLogsShutdownHook());
 //        }
+
+        springHooksHandler.addShutdownHook((s) -> {
+            try {
+                consumerHttpServer.stop();
+                maxRateSupervisor.stop();
+                assignmentCache.stop();
+                oAuthHttpClient.stop();
+                consumerNodesRegistry.stop();
+                supervisorController.shutdown();
+                applicationContext.registerShutdownHook();
+            } catch (Exception e) {
+                logger.error("Exception while shutdown Hermes Consumers", e);
+            }
+        });
+        if (flushLogsShutdownHookEnabled) {
+            springHooksHandler.addShutdownHook(new SpringFlushLogsShutdownHook());
+        }
     }
 
     public void start() {
         try {
             oAuthHttpClient.start();
-            logRepositories.forEach(serviceLocatorLogRepositoryFunction ->
-                    trackers.add(serviceLocatorLogRepositoryFunction.apply(serviceLocator)));
+//            logRepositories.forEach(serviceLocatorLogRepositoryFunction ->
+//                    trackers.add(serviceLocatorLogRepositoryFunction.apply(serviceLocator)));
 
             springLogRepositories.forEach(applicationContextLogRepositoryFunction ->
                     trackers2.add(applicationContextLogRepositoryFunction.apply(applicationContext)));
 
-            messageSenderProvidersSuppliers.entrySet().stream().forEach(entry ->
-                    entry.getValue().stream().forEach(supplier ->
-                            messageSenderFactory.addSupportedProtocol(entry.getKey(), supplier.apply(serviceLocator))
-                    ));
+//            messageSenderProvidersSuppliers.entrySet().stream().forEach(entry ->
+//                    entry.getValue().stream().forEach(supplier ->
+//                            messageSenderFactory.addSupportedProtocol(entry.getKey(), supplier.apply(serviceLocator))
+//                    ));
 
             springMessageSenderProvidersSuppliers.entrySet().forEach(entry ->
                     entry.getValue().forEach(supplier ->
@@ -159,18 +160,20 @@ public class HermesConsumers {//TODO: change to bean?
             supervisorController.start();
             assignmentCache.start();
             maxRateSupervisor.start();
-            serviceLocator.getService(ConsumersRuntimeMonitor.class).start();
-            applicationContext.getBean(ConsumersRuntimeMonitor.class);
+//            serviceLocator.getService(ConsumersRuntimeMonitor.class).start();
+            applicationContext.getBean(ConsumersRuntimeMonitor.class).start();
             consumerHttpServer.start();
             httpClientsWorkloadReporter.start();
-            hooksHandler.startup(serviceLocator);
+//            hooksHandler.startup(serviceLocator);
+            springHooksHandler.startup(applicationContext);
         } catch (Exception e) {
             logger.error("Exception while starting Hermes Consumers", e);
         }
     }
 
     public void stop() {
-        hooksHandler.shutdown(serviceLocator);
+//        hooksHandler.shutdown(serviceLocator);//TODO
+        springHooksHandler.shutdown(applicationContext);//TODO
     }
 
     private ServiceLocator createDIContainer(List<Binder> binders) {
@@ -178,13 +181,13 @@ public class HermesConsumers {//TODO: change to bean?
         return ServiceLocatorUtilities.bind(uniqueName, binders.toArray(new Binder[binders.size()]));
     }
 
-    public <T> T getService(Class<T> clazz) {
-        return serviceLocator.getService(clazz);
-    }
+//    public <T> T getService(Class<T> clazz) {
+//        return serviceLocator.getService(clazz);
+//    }
 
-    public <T> T getService(Class<T> clazz, String name) {
-        return serviceLocator.getService(clazz, name);
-    }
+//    public <T> T getService(Class<T> clazz, String name) {
+//        return serviceLocator.getService(clazz, name);
+//    }
 
     public static HermesConsumersBuilder consumers(GenericApplicationContext applicationContext) {
         return new HermesConsumersBuilder(applicationContext);
