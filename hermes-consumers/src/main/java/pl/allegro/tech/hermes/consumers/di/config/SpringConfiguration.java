@@ -558,7 +558,7 @@ public class SpringConfiguration {
     }
 
     @Bean
-    public Retransmitter retransmitter(SubscriptionOffsetChangeIndicator subscriptionOffsetChangeIndicator,//TODO
+    public Retransmitter retransmitter(SubscriptionOffsetChangeIndicator subscriptionOffsetChangeIndicator,
                                        ConfigFactory configs) {
         return new Retransmitter(subscriptionOffsetChangeIndicator, configs);
     }
@@ -965,12 +965,4 @@ public class SpringConfiguration {
             SubscriptionRepository subscriptionRepository) {
         return new SubscriptionOffsetChangeIndicatorFactory(zookeeper, paths, subscriptionRepository).provide();
     }
-
-
-//---------------------------------------------
-
-//    @Bean
-//    public {
-//        return new IntegrationTestKafkaNamesMapperFactory(configFactory.getStringProperty(Configs.KAFKA_NAMESPACE)).create()
-//    }
 }

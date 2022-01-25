@@ -1,10 +1,12 @@
 package pl.allegro.tech.hermes.consumers;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.glassfish.hk2.api.ServiceLocator;//TODO: remove
 import org.glassfish.hk2.utilities.Binder;//TODO: remove
 import org.glassfish.hk2.utilities.binding.AbstractBinder;//TODO: remove
 import org.jvnet.hk2.component.MultiMap;//TODO: remove
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
@@ -38,9 +40,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public final class HermesConsumersBuilder {//TODO: use java config + qualifiers instead
+public final class HermesConsumersBuilder {//TODO: use java config + qualifiers instead?
 
-    private final GenericApplicationContext applicationContext;
+//    private final GenericApplicationContext applicationContext;
 
     private static final int RANK_HIGHER_THAN_DEFAULT = 10;
 
@@ -53,18 +55,19 @@ public final class HermesConsumersBuilder {//TODO: use java config + qualifiers 
     private final List<Function<ApplicationContext, LogRepository>> springLogRepositories = new ArrayList<>();//TODO
     private final List<SubscriptionMessageFilterCompiler> filters = new ArrayList<>();
     private final List<MessageFilter> globalFilters = new ArrayList<>();
+    private final List<ImmutablePair<Class<?>, Supplier<?>>> beanDefinitions = new ArrayList<>();
 
     private boolean flushLogsShutdownHookEnabled = true;
 
-    public HermesConsumersBuilder(GenericApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
+//    public HermesConsumersBuilder(GenericApplicationContext applicationContext) {
+//        this.applicationContext = applicationContext;
+//    }
 
     private final List<Binder> binders = Lists.newArrayList(
             new CommonBinder(),
             new ConsumersBinder());
 
-    public HermesConsumersBuilder withStartupHook(ServiceAwareHook hook) {//TODO: zastąpić ServiceAwareHook
+    public HermesConsumersBuilder withStartupHook(ServiceAwareHook hook) {//TODO: replace ServiceAwareHook
         hooksHandler.addStartupHook(hook);
         return this;
     }
@@ -181,8 +184,9 @@ public final class HermesConsumersBuilder {//TODO: use java config + qualifiers 
     }
 
     public <T> HermesConsumersBuilder withSpringBinding(Supplier<T> supplier, Class<T> clazz) {
-        BeanDefinitionCustomizer primaryBeanCustomizer = new PrimaryBeanCustomizer();
-        applicationContext.registerBean(clazz, supplier, primaryBeanCustomizer);
+//        BeanDefinitionCustomizer primaryBeanCustomizer = new PrimaryBeanCustomizer();
+//        applicationContext.registerBean(clazz, supplier, primaryBeanCustomizer);
+        beanDefinitions.add(new ImmutablePair<>(clazz, supplier));
         return this;
     }
 
@@ -216,7 +220,7 @@ public final class HermesConsumersBuilder {//TODO: use java config + qualifiers 
         addSpringMessageSenderProvider("https", httpsProviderList);
         addSpringMessageSenderProvider("jms", jmsProviderList);
 
-        return new HermesConsumers(springHooksHandler, binders, springMessageSenderProviders, springLogRepositories, flushLogsShutdownHookEnabled);
+        return new HermesConsumers(springHooksHandler, binders, beanDefinitions, springMessageSenderProviders, springLogRepositories, flushLogsShutdownHookEnabled);
     }
 
     private MessageFilters buildFilters() {
@@ -227,7 +231,7 @@ public final class HermesConsumersBuilder {//TODO: use java config + qualifiers 
         return new MessageFilters(globalFilters, availableFilters);
     }
 
-    private void addSpringMessageSenderProvider(String key, LinkedList<Function<ApplicationContext, ProtocolMessageSenderProvider>> objects) {//TODO: sprawdzić czy dobrze zadziała
+    private void addSpringMessageSenderProvider(String key, LinkedList<Function<ApplicationContext, ProtocolMessageSenderProvider>> objects) {
         LinkedList<Function<ApplicationContext, ProtocolMessageSenderProvider>> currentList =
                 springMessageSenderProviders.computeIfAbsent(key, k -> new LinkedList<>());
         currentList.addAll(objects);

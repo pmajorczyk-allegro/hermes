@@ -28,7 +28,7 @@ public class DependenciesResolverTest extends ZookeeperBaseTest {
     }
 
     @Test
-    public void shouldGetAllServicesWithoutAnyExceptions() { //TODO: czy dla Springa taki test ma w ogóle sens?
+    public void shouldGetAllServicesWithoutAnyExceptions() { //TODO: czy dla Springa taki test ma w ogóle sens? remove
         ServiceLocator serviceLocator = ServiceLocatorUtilities.bind("serviceLocatorTestName1",
                 new CommonBinder(), new ConsumersBinder(), new TestBinder(configFactory), new TrackersBinder()
         );

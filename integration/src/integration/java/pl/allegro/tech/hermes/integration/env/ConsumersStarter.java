@@ -47,7 +47,7 @@ public class ConsumersStarter implements Starter<HermesConsumers> {//TODO?
         configFactory.overrideProperty(CONSUMER_SSL_KEYSTORE_SOURCE, "provided");
         configFactory.overrideProperty(CONSUMER_SSL_TRUSTSTORE_SOURCE, "provided");
 
-        consumers = HermesConsumers.consumers(null)//TODO: ogarnąć
+        consumers = HermesConsumers.consumers()
                 .withKafkaTopicsNamesMapper(
                         new IntegrationTestKafkaNamesMapperFactory(configFactory.getStringProperty(Configs.KAFKA_NAMESPACE)).create())
 //                .withSpringKafkaTopicsNamesMapper(

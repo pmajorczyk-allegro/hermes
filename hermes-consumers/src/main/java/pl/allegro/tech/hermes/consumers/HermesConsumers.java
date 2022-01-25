@@ -1,10 +1,10 @@
 package pl.allegro.tech.hermes.consumers;
 
-import org.glassfish.hk2.api.ServiceLocator;//only class other than config that could be aware of Spring itself
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.glassfish.hk2.utilities.Binder;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import pl.allegro.tech.hermes.consumers.consumer.oauth.client.OAuthClient;
@@ -12,6 +12,7 @@ import pl.allegro.tech.hermes.consumers.consumer.rate.maxrate.MaxRateSupervisor;
 import pl.allegro.tech.hermes.consumers.consumer.sender.MessageSenderFactory;
 import pl.allegro.tech.hermes.consumers.consumer.sender.ProtocolMessageSenderProvider;
 import pl.allegro.tech.hermes.consumers.consumer.sender.http.HttpClientsWorkloadReporter;
+import pl.allegro.tech.hermes.consumers.di.config.PrimaryBeanCustomizer;
 import pl.allegro.tech.hermes.consumers.health.ConsumerHttpServer;
 import pl.allegro.tech.hermes.consumers.hooks.SpringFlushLogsShutdownHook;
 import pl.allegro.tech.hermes.consumers.hooks.SpringHooksHandler;
@@ -25,8 +26,8 @@ import pl.allegro.tech.hermes.tracker.consumers.Trackers;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class HermesConsumers {//TODO: change to bean?
 
@@ -50,12 +51,13 @@ public class HermesConsumers {//TODO: change to bean?
 
     public static void main(GenericApplicationContext applicationContext) {//TODO: change to singleton to avoid static?
         HermesConsumers.applicationContext = applicationContext;
-        consumers(applicationContext).build().start();
+        consumers().build().start();
     }
 
     HermesConsumers(SpringHooksHandler springHooksHandler,
 //            HooksHandler hooksHandler,
                     List<Binder> binders,
+                    List<ImmutablePair<Class<?>, Supplier<?>>> builderBeans,
 //                    MultiMap<String, Function<ServiceLocator, ProtocolMessageSenderProvider>> messageSenderProvidersSuppliers,
                     Map<String, LinkedList<Function<ApplicationContext, ProtocolMessageSenderProvider>>> springMessageSenderProvidersSuppliers,
 //                    List<Function<ServiceLocator, LogRepository>> logRepositories,
@@ -68,6 +70,7 @@ public class HermesConsumers {//TODO: change to bean?
 
 //        serviceLocator = createDIContainer(binders);//inject all config binders' classes into IoC container
 //        SpringBridge.getSpringBridge().initializeSpringBridge(serviceLocator);
+        registerAllBeansAsPrimary(builderBeans);
 
         //get all "beans" from IoC container
 //        trackers = serviceLocator.getService(Trackers.class);
@@ -90,7 +93,7 @@ public class HermesConsumers {//TODO: change to bean?
 //        httpClientsWorkloadReporter = serviceLocator.getService(HttpClientsWorkloadReporter.class);
         httpClientsWorkloadReporter = applicationContext.getBean(HttpClientsWorkloadReporter.class);
 
-//        hooksHandler.addShutdownHook((s) -> { //TODO: czy w ogóle potrzebujemy tych hookow dla Springa?
+//        hooksHandler.addShutdownHook((s) -> { //TODO: do we need hooks for Spring?
 //            try {
 //                consumerHttpServer.stop();
 //                maxRateSupervisor.stop();
@@ -176,8 +179,17 @@ public class HermesConsumers {//TODO: change to bean?
 //        return serviceLocator.getService(clazz, name);
 //    }
 
-    public static HermesConsumersBuilder consumers(GenericApplicationContext applicationContext) {
-        return new HermesConsumersBuilder(applicationContext);
+    public static HermesConsumersBuilder consumers() {
+        return new HermesConsumersBuilder();
+    }
+
+    private void registerAllBeansAsPrimary(List<ImmutablePair<Class<?>, Supplier<?>>> beans) {
+        beans.forEach(this::registerPrimaryBean);
+    }
+
+    private void registerPrimaryBean(ImmutablePair<Class<?>, Supplier<?>> bean) {
+        BeanDefinitionCustomizer primaryBeanCustomizer = new PrimaryBeanCustomizer();
+        applicationContext.registerBean(bean.left, bean.right, primaryBeanCustomizer);
     }
 
 }
